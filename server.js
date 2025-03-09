@@ -48,7 +48,7 @@ app.post('/webhook', async (req, res) => {
         body.entry.forEach(async (entry) => {
             const webhookEvent = entry.messaging[0];
             const senderId = webhookEvent.sender.id;
-            const message = webhookEvent.message?.text;
+            const message = webhookEvent.message?.text || webhookEvent.message?.quick_reply?.payload;
 
             // Handle user messages
             if (message) {
@@ -127,6 +127,21 @@ async function handleMessage(senderId, message) {
     }
 
     const userState = userStates[senderId];
+
+    // Check if the message is a quick reply payload
+    if (message === 'start') {
+        userState.step = 'start';
+        userStates[senderId] = userState;
+        responseText = "👋 مرحباً! أنا بوت المعلم لمساعدتك في الدراسة للبكالوريا 🎓. يمكنني إرسال لك الدروس والفيديوهات 📚🎥.\n\n👇 اختر الفيلير الذي تريد:";
+        await sendMessage(senderId, responseText);
+        await sendMessage(senderId, 
+            "1- Sciences Mathématiques A 🧮\n" +
+            "2- Sciences Mathématiques B 🧮\n" +
+            "3- Sciences Physiques 🔬\n" +
+            "4- Sciences de la Vie et de la Terre (SVT) 🌱"
+        );
+        return;
+    }
 
     switch (userState.step) {
         case 'start':
