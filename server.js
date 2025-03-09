@@ -157,7 +157,7 @@ async function handleMessage(senderId, message) {
                     "4- Sciences de la Vie et de la Terre (SVT) 🌱"
                 );
             } else {
-                responseText = "⚠️ لم أفهم رسالتك. يمكنك كتابة 'مرحباً' للبدء من جديد.";
+                responseText = "⚠️ لم أفهم رسالتك. يمكنك كتابة 'مرحبا' للبدء من جديد.";
                 await sendMessage(senderId, responseText);
             }
             break;
