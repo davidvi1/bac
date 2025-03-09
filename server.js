@@ -63,12 +63,16 @@ app.post('/webhook', async (req, res) => {
 });
 
 // Function to Send Messages via Facebook Graph API
-async function sendMessage(recipientId, messageText) {
+async function sendMessage(recipientId, messageText, quickReplies = null) {
     const url = `https://graph.facebook.com/v12.0/me/messages?access_token=${process.env.PAGE_ACCESS_TOKEN}`;
     const data = {
         recipient: { id: recipientId },
         message: { text: messageText },
     };
+
+    if (quickReplies) {
+        data.message.quick_replies = quickReplies;
+    }
 
     try {
         await axios.post(url, data);
@@ -157,6 +161,21 @@ async function handleMessage(senderId, message) {
 
                 // Fetch subjects for the selected filiere
                 const subjects = await fetchSubjectsForFiliere(userState.filiere);
+
+                if (subjects.length === 0) {
+                    responseText = `⚠️ لا توجد مواد متاحة للفيلير: ${userState.filiere}. الرجاء اختيار فيلير آخر.`;
+                    await sendMessage(senderId, responseText, [
+                        {
+                            content_type: 'text',
+                            title: 'العودة للبداية',
+                            payload: 'start',
+                        },
+                    ]);
+                    userState.step = 'start';
+                    userStates[senderId] = userState;
+                    return;
+                }
+
                 responseText = `📚 اخترت الفيلير: ${userState.filiere}. الآن اختر المادة:\n` +
                     subjects.map((subject, index) => `${index + 1}- ${subject}`).join('\n');
                 await sendMessage(senderId, responseText);
@@ -199,7 +218,13 @@ async function handleMessage(senderId, message) {
 
                 if (courses.length === 0) {
                     responseText = "⚠️ لا توجد مواد متاحة لهذه المادة والفصل. حاول مرة أخرى.";
-                    await sendMessage(senderId, responseText);
+                    await sendMessage(senderId, responseText, [
+                        {
+                            content_type: 'text',
+                            title: 'العودة للبداية',
+                            payload: 'start',
+                        },
+                    ]);
                     userState.step = 'start';
                     userStates[senderId] = userState;
                     return;
